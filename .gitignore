@@ -1,0 +1,10 @@
+# Python artifacts
+program/__pycache__
+venv
+
+# Environment variables
+.env
+
+# Generated files
+bot_agents.json
+cointegrated_pairs.csv
