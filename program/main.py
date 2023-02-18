@@ -57,8 +57,6 @@ if __name__ == "__main__":
             send_message(f"Error saving cointegrated pairs {e}")
             exit(1)
 
-    exit(0)
-
     # Run as always on
     while True:
 
