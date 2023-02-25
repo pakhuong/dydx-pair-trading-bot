@@ -108,6 +108,7 @@ def manage_trade_exits(client):
             if len(series_1) > 0 and len(series_1) == len(series_2):
                 spread = series_1 - (hedge_ratio * series_2)
                 z_score_current = calculate_zscore(spread).values.tolist()[-1]
+                position["z_score_current"] = z_score_current
 
             # Determine trigger
             z_score_level_check = abs(z_score_current) >= abs(z_score_traded)
