@@ -1,4 +1,4 @@
-from constants import CLOSE_AT_ZSCORE_CROSS
+from constants import CLOSE_AT_ZSCORE_CROSS, ZSCORE_THRESH
 from func_utils import format_number
 from func_public import get_candles_recent
 from func_cointegration import calculate_zscore
@@ -110,7 +110,7 @@ def manage_trade_exits(client):
                 z_score_current = calculate_zscore(spread).values.tolist()[-1]
 
             # Determine trigger
-            z_score_level_check = abs(z_score_current) >= abs(z_score_traded)
+            z_score_level_check = abs(z_score_current) >= ZSCORE_THRESH
             z_score_cross_check = (z_score_current < 0 and z_score_traded > 0) or (
                 z_score_current > 0 and z_score_traded < 0)
 
