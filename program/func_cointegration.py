@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
-from statsmodels.tsa.stattools import adfuller, coint
+from statsmodels.tsa.stattools import coint
 from constants import MAX_HALF_LIFE, WINDOW
 
 # Calculate Half Life
@@ -20,23 +20,6 @@ def calculate_half_life(spread):
     halflife = round(-np.log(2) / res.params[1], 0)
 
     return halflife
-
-
-def test_for_stationarity(spread):
-    is_stationary = False
-
-    # Perform Dickey-Fuller test
-    result = adfuller(spread)
-
-    # Extract test statistics and critical values
-    test_statistic = result[0]
-    critical_values = result[4]
-
-    # Compare test statistic to critical values
-    if test_statistic < critical_values["1%"]:
-        is_stationary = True
-
-    return is_stationary
 
 
 # Calculate ZScore
@@ -60,6 +43,8 @@ def calculate_cointegration(series_1, series_2):
     coint_t = coint_res[0]
     p_value = coint_res[1]
     critical_value = coint_res[2][1]
+    t_check = coint_t < critical_value
+    coint_flag = 1 if p_value < 0.05 and t_check else 0
 
     model = sm.OLS(series_1, series_2).fit()
     hedge_ratio = model.params[0]
@@ -67,12 +52,7 @@ def calculate_cointegration(series_1, series_2):
     spread = series_1 - (hedge_ratio * series_2)
     half_life = calculate_half_life(spread)
 
-    t_check = coint_t < critical_value
-    coint_flag = 1 if p_value < 0.05 and t_check else 0
-
-    stationary_flag = test_for_stationarity(spread)
-
-    return coint_flag, hedge_ratio, half_life, stationary_flag
+    return coint_flag, hedge_ratio, half_life
 
 
 # Store Cointegration Results
@@ -93,11 +73,11 @@ def store_cointegration_results(df_market_prices):
                 float).tolist()
 
             # Check cointegration
-            coint_flag, hedge_ratio, half_life, stationary_flag = calculate_cointegration(
+            coint_flag, hedge_ratio, half_life = calculate_cointegration(
                 series_1, series_2)
 
             # Log pair
-            if coint_flag == 1 and half_life <= MAX_HALF_LIFE and half_life > 0 and stationary_flag:
+            if coint_flag == 1 and half_life <= MAX_HALF_LIFE and half_life > 0:
                 criteria_met_pairs.append({
                     "base_market": base_market,
                     "quote_market": quote_market,
