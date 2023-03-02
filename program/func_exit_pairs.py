@@ -111,7 +111,7 @@ def manage_trade_exits(client):
                 position["z_score_current"] = z_score_current
 
             # Determine trigger
-            z_score_level_check = abs(z_score_current) >= ZSCORE_THRESH
+            z_score_level_check = abs(z_score_current) >= 0
             z_score_cross_check = (z_score_current < 0 and z_score_traded > 0) or (
                 z_score_current > 0 and z_score_traded < 0)
 
