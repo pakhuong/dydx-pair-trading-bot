@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
-from statsmodels.tsa.stattools import coint
+from statsmodels.tsa.stattools import adfuller, coint
 from constants import MAX_HALF_LIFE, WINDOW
 
 # Calculate Half Life
@@ -20,6 +20,23 @@ def calculate_half_life(spread):
     halflife = round(-np.log(2) / res.params[1], 0)
 
     return halflife
+
+
+def test_for_stationarity(spread):
+    is_stationary = False
+
+    # Perform Dickey-Fuller test
+    result = adfuller(spread)
+
+    # Extract test statistics and critical values
+    test_statistic = result[0]
+    critical_values = result[4]
+
+    # Compare test statistic to critical values
+    if test_statistic < critical_values["1%"] or test_statistic < critical_values["5%"]:
+        is_stationary = True
+
+    return is_stationary
 
 
 # Calculate ZScore
@@ -52,7 +69,9 @@ def calculate_cointegration(series_1, series_2):
     spread = series_1 - (hedge_ratio * series_2)
     half_life = calculate_half_life(spread)
 
-    return coint_flag, hedge_ratio, half_life
+    stationary_flag = test_for_stationarity(spread)
+
+    return coint_flag, hedge_ratio, half_life, stationary_flag
 
 
 # Store Cointegration Results
@@ -73,11 +92,11 @@ def store_cointegration_results(df_market_prices):
                 float).tolist()
 
             # Check cointegration
-            coint_flag, hedge_ratio, half_life = calculate_cointegration(
+            coint_flag, hedge_ratio, half_life, stationary_flag = calculate_cointegration(
                 series_1, series_2)
 
             # Log pair
-            if coint_flag == 1 and half_life <= MAX_HALF_LIFE and half_life > 0:
+            if coint_flag == 1 and half_life <= MAX_HALF_LIFE and half_life > 0 and stationary_flag:
                 criteria_met_pairs.append({
                     "base_market": base_market,
                     "quote_market": quote_market,
