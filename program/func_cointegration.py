@@ -33,7 +33,7 @@ def test_for_stationarity(spread):
     critical_values = result[4]
 
     # Compare test statistic to critical values
-    if test_statistic < critical_values["1%"] or test_statistic < critical_values["5%"]:
+    if test_statistic < critical_values["1%"]:
         is_stationary = True
 
     return is_stationary
