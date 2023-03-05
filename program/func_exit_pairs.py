@@ -8,9 +8,8 @@ import time
 
 from pprint import pprint
 
+
 # Manage trade exits
-
-
 def manage_trade_exits(client):
     """
       Manage exiting open positions
@@ -24,6 +23,7 @@ def manage_trade_exits(client):
     try:
         open_positions_file = open("bot_agents.json")
         open_positions_dict = json.load(open_positions_file)
+
     except:
         return "complete"
 
@@ -35,11 +35,18 @@ def manage_trade_exits(client):
     exchange_pos = client.private.get_positions(status="OPEN")
     all_exc_pos = exchange_pos.data["positions"]
     markets_live = []
+
     for p in all_exc_pos:
-        markets_live.append(p["market"])
+        markets_live.append(p)
 
     # Protect API
     time.sleep(0.5)
+
+    # Get markets for reference of tick size
+    markets = client.public.get_markets().data["markets"]
+
+    # Protect API
+    time.sleep(0.2)
 
     # Check all saved positions match order record
     # Exit trade according to any exit trade rules
@@ -79,7 +86,20 @@ def manage_trade_exits(client):
         # Perform matching checks
         check_m1 = position_market_m1 == order_market_m1 and position_size_m1 == order_size_m1 and position_side_m1 == order_side_m1
         check_m2 = position_market_m2 == order_market_m2 and position_size_m2 == order_size_m2 and position_side_m2 == order_side_m2
-        check_live = position_market_m1 in markets_live and position_market_m2 in markets_live
+
+        check_m1_live = False
+
+        for m in markets_live:
+            if m["market"] == position_market_m1:
+                check_m1_live = True
+
+        check_m2_live = False
+
+        for m in markets_live:
+            if m["market"] == position_market_m2:
+                check_m2_live = True
+
+        check_live = check_m1_live and check_m2_live
 
         # Guard: If not all match exit with error
         if not check_m1 or not check_m2 or not check_live:
@@ -91,12 +111,6 @@ def manage_trade_exits(client):
         series_1 = get_candles_recent(client, position_market_m1)
         time.sleep(0.2)
         series_2 = get_candles_recent(client, position_market_m2)
-        time.sleep(0.2)
-
-        # Get markets for reference of tick size
-        markets = client.public.get_markets().data
-
-        # Protect API
         time.sleep(0.2)
 
         # Trigger close based on Z-Score
@@ -144,8 +158,8 @@ def manage_trade_exits(client):
             price_m2 = float(series_2[-1])
             accept_price_m1 = price_m1 * 1.05 if side_m1 == "BUY" else price_m1 * 0.95
             accept_price_m2 = price_m2 * 1.05 if side_m2 == "BUY" else price_m2 * 0.95
-            tick_size_m1 = markets["markets"][position_market_m1]["tickSize"]
-            tick_size_m2 = markets["markets"][position_market_m2]["tickSize"]
+            tick_size_m1 = markets[position_market_m1]["tickSize"]
+            tick_size_m2 = markets[position_market_m2]["tickSize"]
             accept_price_m1 = format_number(accept_price_m1, tick_size_m1)
             accept_price_m2 = format_number(accept_price_m2, tick_size_m2)
 
@@ -196,7 +210,47 @@ def manage_trade_exits(client):
         else:
             save_output.append(position)
 
+        # Remove position from list `market_lives` after processing
+        markets_live = [m for m in markets_live if m["market"] !=
+                        position_market_m1 and m["market"] != position_market_m2]
+
+    # Close remaining live positions that are not being tracked
+    if len(markets_live) > 0:
+        print(f"{len(markets_live)} markets not being tracked. Closing...")
+
+        for m in markets_live:
+            print(f">>> Closing {m['market']} <<<")
+
+            market = m["market"]
+            price_series = get_candles_recent(client, market)
+            time.sleep(0.2)
+            price = float(price_series[-1])
+            size = m["size"]
+            side = "SELL" if m["side"] == "LONG" else "BUY"
+            tick_size = markets[m["market"]]["tickSize"]
+            accept_price = price * 1.05 if side == "BUY" else price * 0.95
+            accept_price = format_number(accept_price, tick_size)
+
+            try:
+                close_order = place_market_order(
+                    client,
+                    market=market,
+                    side=side,
+                    size=size,
+                    price=accept_price,
+                    reduce_only=True,
+                )
+
+                print(close_order["order"]["id"])
+                print(">>> Closing <<<")
+
+                time.sleep(1)
+
+            except Exception as e:
+                print(f"Exit failed for {market}")
+
     # Save remaining items
     print(f"{len(save_output)} Items remaining. Saving file...")
+
     with open("bot_agents.json", "w") as f:
         json.dump(save_output, f)
