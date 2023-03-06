@@ -247,7 +247,7 @@ def manage_trade_exits(client):
                 time.sleep(1)
 
             except Exception as e:
-                print(f"Exit failed for {market}")
+                print(f"Exit failed for market {market}:", e)
 
     # Save remaining items
     print(f"{len(save_output)} Items remaining. Saving file...")
