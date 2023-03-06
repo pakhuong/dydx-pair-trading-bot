@@ -11,13 +11,25 @@ def format_number(curr_num, match_num):
     curr_num_string = f"{curr_num}"
     match_num_string = f"{match_num}"
 
+    # Round to match decimals
     if "." in match_num_string:
         match_decimals = len(match_num_string.split(".")[1])
         curr_num_string = f"{curr_num:.{match_decimals}f}"
         curr_num_string = curr_num_string[:]
         return curr_num_string
-    else:
-        return f"{int(curr_num)}"
+
+    # Round to nearest integer
+    if match_num_string == "1":
+        curr_num_string = f"{int(curr_num)}"
+        return curr_num_string
+
+    # Round to nearest ten
+    if match_num_string == "10":
+        curr_num_string = f"{int(curr_num)}"
+        curr_num_string = curr_num_string[:-1] + "0"
+        return curr_num_string
+
+    return f"{int(curr_num)}"
 
 
 # Format time
