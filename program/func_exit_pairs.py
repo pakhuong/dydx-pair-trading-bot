@@ -6,7 +6,7 @@ from func_private import place_market_order
 import json
 import time
 
-from pprint import pprint
+from func_messaging import send_message
 
 
 # Manage trade exits
@@ -248,6 +248,7 @@ def manage_trade_exits(client):
 
             except Exception as e:
                 print(f"Exit failed for market {market}:", e)
+                send_message(f"Exit failed for market {market}: {e}")
 
     # Save remaining items
     print(f"{len(save_output)} Items remaining. Saving file...")
