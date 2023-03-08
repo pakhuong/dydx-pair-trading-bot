@@ -26,6 +26,7 @@ class BotAgent:
         quote_size,
         quote_price,
         accept_failsafe_base_price,
+        spread,
         z_score,
         half_life,
         hedge_ratio,
@@ -42,6 +43,7 @@ class BotAgent:
         self.quote_size = quote_size
         self.quote_price = quote_price
         self.accept_failsafe_base_price = accept_failsafe_base_price
+        self.spread = spread
         self.z_score = z_score
         self.half_life = half_life
         self.hedge_ratio = hedge_ratio
@@ -52,6 +54,7 @@ class BotAgent:
             "market_1": market_1,
             "market_2": market_2,
             "hedge_ratio": hedge_ratio,
+            "spread": spread,
             "z_score": z_score,
             "half_life": half_life,
             "order_id_m1": "",

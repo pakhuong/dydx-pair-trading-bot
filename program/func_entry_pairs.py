@@ -131,6 +131,7 @@ def open_positions(client):
                             quote_size=quote_size,
                             quote_price=accept_quote_price,
                             accept_failsafe_base_price=accept_failsafe_base_price,
+                            spread=spread[-1],
                             z_score=z_score,
                             half_life=half_life,
                             hedge_ratio=hedge_ratio
