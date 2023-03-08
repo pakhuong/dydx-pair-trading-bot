@@ -225,8 +225,8 @@ def manage_trade_exits(client):
             price_series = get_candles_recent(client, market)
             time.sleep(0.2)
             price = float(price_series[-1])
-            size = abs(float(m["size"]))
             side = "SELL" if m["side"] == "LONG" else "BUY"
+            size = m["size"] if side == "SELL" else m["size"][1:]
             tick_size = markets[m["market"]]["tickSize"]
             accept_price = price * 1.05 if side == "BUY" else price * 0.95
             accept_price = format_number(accept_price, tick_size)
