@@ -219,15 +219,17 @@ def manage_trade_exits(client):
         print(f"{len(markets_live)} markets not being tracked. Closing...")
 
         for m in markets_live:
+            market = m["market"]
+
             print(f">>> Closing {m['market']} <<<")
 
-            market = m["market"]
             price_series = get_candles_recent(client, market)
             time.sleep(0.2)
             price = float(price_series[-1])
             side = "SELL" if m["side"] == "LONG" else "BUY"
+            # Position side will be negative in case of short position
             size = m["size"] if side == "SELL" else m["size"][1:]
-            tick_size = markets[m["market"]]["tickSize"]
+            tick_size = markets[market]["tickSize"]
             accept_price = price * 1.05 if side == "BUY" else price * 0.95
             accept_price = format_number(accept_price, tick_size)
 
