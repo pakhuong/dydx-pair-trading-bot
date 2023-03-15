@@ -63,8 +63,19 @@ def calculate_cointegration(series_1, series_2):
     t_check = coint_t < critical_value
     coint_flag = 1 if p_value < 0.05 and t_check else 0
 
+    return coint_flag
+
+
+# Calculate hedge ratio and spread
+def calculate_hedge_ratio_and_spread(series_1, series_2):
+    series_1 = np.array(series_1).astype(np.float)
+    series_2 = np.array(series_2).astype(np.float)
+
     model = sm.OLS(series_1, series_2).fit()
     hedge_ratio = model.params[0]
+    spread = series_1 - (hedge_ratio * series_2)
+
+    return hedge_ratio, spread
 
     spread = series_1 - (hedge_ratio * series_2)
     half_life = calculate_half_life(spread)
@@ -91,9 +102,20 @@ def store_cointegration_results(df_market_prices):
             series_2 = df_market_prices[quote_market].values.astype(
                 float).tolist()
 
-            # Check cointegration
-            coint_flag, hedge_ratio, half_life, stationary_flag = calculate_cointegration(
+            # Check criteria
+            coint_flag = calculate_cointegration(
                 series_1, series_2)
+
+            if coint_flag != 1:
+                continue
+
+            hedge_ratio, spread = calculate_hedge_ratio_and_spread(
+                series_1, series_2)
+            half_life = calculate_half_life(spread)
+            stationary_flag = test_for_stationarity(spread)
+
+            if half_life < 0 or half_life > MAX_HALF_LIFE or not stationary_flag:
+                continue
 
             # Log pair
             if coint_flag == 1 and half_life <= MAX_HALF_LIFE and half_life > 0 and stationary_flag:
