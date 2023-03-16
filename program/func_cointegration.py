@@ -170,6 +170,7 @@ def store_cointegration_results(df_market_prices):
                     "quote_market": quote_market,
                     "hedge_ratio": hedge_ratio,
                     "half_life": half_life,
+                    "z_score": z_score.values.astype(float).tolist()[-1],
                     "sharpe_ratio": sharpe,
                 })
 
