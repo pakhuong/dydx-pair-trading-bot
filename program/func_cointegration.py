@@ -155,9 +155,8 @@ def store_cointegration_results(df_market_prices):
             hedge_ratio, spread = calculate_hedge_ratio_and_spread(
                 series_1, series_2)
             half_life = calculate_half_life(spread)
-            stationary_flag = test_for_stationarity(spread)
 
-            if half_life < 0 or half_life > MAX_HALF_LIFE or not stationary_flag:
+            if half_life < 0 or half_life > MAX_HALF_LIFE:
                 continue
 
             z_score = calculate_zscore(spread)
