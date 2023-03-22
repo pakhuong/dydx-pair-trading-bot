@@ -123,7 +123,7 @@ def backtest(spread, z_score):
 
     # Calculate Sharpe Ratio
     sharpe = ((df_backtest["port_rets"].mean() /
-              df_backtest["port_rets"].std()) * np.sqrt(365))
+              df_backtest["port_rets"].std()) * np.sqrt(2190))
 
     return sharpe
 
