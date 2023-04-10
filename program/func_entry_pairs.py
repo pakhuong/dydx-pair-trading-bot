@@ -1,4 +1,4 @@
-from constants import ZSCORE_THRESH, USD_PER_TRADE, USD_MIN_COLLATERAL
+from constants import ZSCORE_THRESH, LEVERAGE
 from func_utils import format_number
 from func_public import get_candles_recent
 from func_cointegration import calculate_zscore
@@ -6,8 +6,6 @@ from func_private import is_open_positions
 from func_bot_agent import BotAgent
 import pandas as pd
 import json
-
-from pprint import pprint
 
 
 # Open positions
@@ -34,6 +32,18 @@ def open_positions(client):
             bot_agents.append(p)
     except:
         bot_agents = []
+
+    # Check account balance
+    account = client.private.get_account()
+    free_collateral = float(
+        account.data["account"]["freeCollateral"])
+    quote_balance = float(account.data["account"]["quoteBalance"])
+    equity = quote_balance * LEVERAGE
+    position_size = equity * 0.1
+    min_collateral = position_size * 2
+
+    print(
+        f"Balance: {free_collateral} and minimum at {min_collateral}")
 
     # Find ZScore triggers
     for index, row in df.iterrows():
@@ -88,8 +98,8 @@ def open_positions(client):
                         failsafe_base_price, base_tick_size)
 
                     # Get size
-                    base_quantity = 1 / base_price * USD_PER_TRADE
-                    quote_quantity = 1 / quote_price * USD_PER_TRADE
+                    base_quantity = 1 / base_price * position_size
+                    quote_quantity = 1 / quote_price * position_size
                     base_step_size = markets["markets"][base_market]["stepSize"]
                     quote_step_size = markets["markets"][quote_market]["stepSize"]
 
@@ -108,15 +118,8 @@ def open_positions(client):
                     # If checks pass, place trades
                     if check_base and check_quote:
 
-                        # Check account balance
-                        account = client.private.get_account()
-                        free_collateral = float(
-                            account.data["account"]["freeCollateral"])
-                        print(
-                            f"Balance: {free_collateral} and minimum at {USD_MIN_COLLATERAL}")
-
                         # Guard: Ensure collateral
-                        if free_collateral < USD_MIN_COLLATERAL:
+                        if free_collateral < min_collateral:
                             break
 
                         # Create Bot Agent
@@ -157,7 +160,7 @@ def open_positions(client):
                             print("---")
 
     # Save agents
-    print(f"Success: Manage open trades checked")
+    print("Success: Manage open trades checked")
     if len(bot_agents) > 0:
         with open("bot_agents.json", "w") as f:
             json.dump(bot_agents, f)

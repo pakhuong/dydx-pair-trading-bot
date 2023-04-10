@@ -25,8 +25,7 @@ WINDOW = 21
 # Thresholds - Opening
 MAX_HALF_LIFE = 24
 ZSCORE_THRESH = 2
-USD_PER_TRADE = 200
-USD_MIN_COLLATERAL = 400
+LEVERAGE = config("LEVERAGE", cast=int)
 
 # Thresholds - Closing
 CLOSE_AT_ZSCORE_CROSS = True
