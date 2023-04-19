@@ -1,9 +1,10 @@
-from constants import CLOSE_AT_ZSCORE_CROSS, ZSCORE_THRESH
+from constants import CLOSE_AT_ZSCORE_CROSS, CLOSE_IF_NO_LONGER_COINTEGRATED
 from func_utils import format_number
 from func_public import get_candles_recent
 from func_cointegration import calculate_zscore
 from func_private import place_market_order
 import json
+import pandas as pd
 import time
 
 from func_messaging import send_message
@@ -12,8 +13,8 @@ from func_messaging import send_message
 # Manage trade exits
 def manage_trade_exits(client):
     """
-      Manage exiting open positions
-      Based upon criteria set in constants
+    Manage exiting open positions
+    Based upon criteria set in constants
     """
 
     # Initialize saving output
@@ -51,7 +52,6 @@ def manage_trade_exits(client):
     # Check all saved positions match order record
     # Exit trade according to any exit trade rules
     for position in open_positions_dict:
-
         # Initialize is_close trigger
         is_close = False
 
@@ -84,8 +84,16 @@ def manage_trade_exits(client):
         order_side_m2 = order_m2.data["order"]["side"]
 
         # Perform matching checks
-        check_m1 = position_market_m1 == order_market_m1 and position_size_m1 == order_size_m1 and position_side_m1 == order_side_m1
-        check_m2 = position_market_m2 == order_market_m2 and position_size_m2 == order_size_m2 and position_side_m2 == order_side_m2
+        check_m1 = (
+            position_market_m1 == order_market_m1
+            and position_size_m1 == order_size_m1
+            and position_side_m1 == order_side_m1
+        )
+        check_m2 = (
+            position_market_m2 == order_market_m2
+            and position_size_m2 == order_size_m2
+            and position_side_m2 == order_side_m2
+        )
 
         check_m1_live = False
 
@@ -104,7 +112,8 @@ def manage_trade_exits(client):
         # Guard: If not all match exit with error
         if not check_m1 or not check_m2 or not check_live:
             print(
-                f"Warning: Not all open positions match exchange records for {position_market_m1} and {position_market_m2}")
+                f"Warning: Not all open positions match exchange records for {position_market_m1} and {position_market_m2}"
+            )
             continue
 
         # Get prices
@@ -115,7 +124,6 @@ def manage_trade_exits(client):
 
         # Trigger close based on Z-Score
         if CLOSE_AT_ZSCORE_CROSS:
-
             # Initialize z_scores
             hedge_ratio = position["hedge_ratio"]
             z_score_traded = position["z_score"]
@@ -128,11 +136,11 @@ def manage_trade_exits(client):
             # Determine trigger
             z_score_level_check = abs(z_score_current) >= 0
             z_score_cross_check = (z_score_current < 0 and z_score_traded > 0) or (
-                z_score_current > 0 and z_score_traded < 0)
+                z_score_current > 0 and z_score_traded < 0
+            )
 
             # Close trade
             if z_score_level_check and z_score_cross_check:
-
                 # Initiate close trigger
                 is_close = True
 
@@ -141,9 +149,27 @@ def manage_trade_exits(client):
         # Trigger is_close
         ###
 
+        # Close position if position_market_m1 and position_market_m2 are no longer cointegrated
+        if not is_close and CLOSE_IF_NO_LONGER_COINTEGRATED:
+            df_cointegrated_pairs = pd.read_csv("cointegrated_pairs.csv")
+            is_still_cointegrated = False
+
+            for _, row in df_cointegrated_pairs.iterrows():
+                base_market = row["base_market"]
+                quote_market = row["quote_market"]
+
+                if (
+                    base_market == position_market_m1
+                    and quote_market == position_market_m2
+                ):
+                    is_still_cointegrated = True
+                    break
+
+            if not is_still_cointegrated:
+                is_close = True
+
         # Close positions if triggered
         if is_close:
-
             # Determine side - m1
             side_m1 = "SELL"
             if position_side_m1 == "SELL":
@@ -166,7 +192,6 @@ def manage_trade_exits(client):
 
             # Close positions
             try:
-
                 # Close position for market 1
                 print(">>> Closing market 1 <<<")
                 print(f"Closing position for {position_market_m1}")
@@ -203,8 +228,7 @@ def manage_trade_exits(client):
                 print(">>> Closing <<<")
 
             except Exception as e:
-                print(
-                    f"Exit failed for {position_market_m1} with {position_market_m2}")
+                print(f"Exit failed for {position_market_m1} with {position_market_m2}")
                 save_output.append(position)
 
         # Keep record if items and save
@@ -212,8 +236,11 @@ def manage_trade_exits(client):
             save_output.append(position)
 
         # Remove position from list `market_lives` after processing
-        markets_live = [m for m in markets_live if m["market"] !=
-                        position_market_m1 and m["market"] != position_market_m2]
+        markets_live = [
+            m
+            for m in markets_live
+            if m["market"] != position_market_m1 and m["market"] != position_market_m2
+        ]
 
     # Close remaining live positions that are not being tracked
     if len(markets_live) > 0:

@@ -11,8 +11,8 @@ import json
 # Open positions
 def open_positions(client):
     """
-      Manage finding triggers for trade entry
-      Store trades for managing later on on exit function
+    Manage finding triggers for trade entry
+    Store trades for managing later on on exit function
     """
 
     # Load cointegrated pairs
@@ -35,19 +35,16 @@ def open_positions(client):
 
     # Check account balance
     account = client.private.get_account()
-    free_collateral = float(
-        account.data["account"]["freeCollateral"])
+    free_collateral = float(account.data["account"]["freeCollateral"])
     quote_balance = float(account.data["account"]["quoteBalance"])
     equity = quote_balance * LEVERAGE
     position_size = equity * 0.1
     min_collateral = position_size * 2
 
-    print(
-        f"Balance: {free_collateral} and minimum at {min_collateral}")
+    print(f"Balance: {free_collateral} and minimum at {min_collateral}")
 
     # Find ZScore triggers
     for index, row in df.iterrows():
-
         # Extract variables
         base_market = row["base_market"]
         quote_market = row["quote_market"]
@@ -65,14 +62,12 @@ def open_positions(client):
 
             # Establish if potential trade
             if abs(z_score) >= ZSCORE_THRESH:
-
                 # Ensure like-for-like not already open (diversify trading)
                 is_base_open = is_open_positions(client, base_market)
                 is_quote_open = is_open_positions(client, quote_market)
 
                 # Place trade
                 if not is_base_open and not is_quote_open:
-
                     # Determine side
                     base_side = "BUY" if z_score < 0 else "SELL"
                     quote_side = "BUY" if z_score > 0 else "SELL"
@@ -80,22 +75,32 @@ def open_positions(client):
                     # Get acceptable price in string format with correct number of decimals
                     base_price = series_1[-1]
                     quote_price = series_2[-1]
-                    accept_base_price = float(
-                        base_price) * 1.01 if z_score < 0 else float(base_price) * 0.99
-                    accept_quote_price = float(
-                        quote_price) * 1.01 if z_score > 0 else float(quote_price) * 0.99
-                    failsafe_base_price = float(
-                        base_price) * 0.05 if z_score < 0 else float(base_price) * 1.7
+                    accept_base_price = (
+                        float(base_price) * 1.01
+                        if z_score < 0
+                        else float(base_price) * 0.99
+                    )
+                    accept_quote_price = (
+                        float(quote_price) * 1.01
+                        if z_score > 0
+                        else float(quote_price) * 0.99
+                    )
+                    failsafe_base_price = (
+                        float(base_price) * 0.05
+                        if z_score < 0
+                        else float(base_price) * 1.7
+                    )
                     base_tick_size = markets["markets"][base_market]["tickSize"]
                     quote_tick_size = markets["markets"][quote_market]["tickSize"]
 
                     # Format prices
-                    accept_base_price = format_number(
-                        accept_base_price, base_tick_size)
+                    accept_base_price = format_number(accept_base_price, base_tick_size)
                     accept_quote_price = format_number(
-                        accept_quote_price, quote_tick_size)
+                        accept_quote_price, quote_tick_size
+                    )
                     accept_failsafe_base_price = format_number(
-                        failsafe_base_price, base_tick_size)
+                        failsafe_base_price, base_tick_size
+                    )
 
                     # Get size
                     base_quantity = 1 / base_price * position_size
@@ -108,16 +113,17 @@ def open_positions(client):
                     quote_size = format_number(quote_quantity, quote_step_size)
 
                     # Ensure size
-                    base_min_order_size = markets["markets"][base_market]["minOrderSize"]
-                    quote_min_order_size = markets["markets"][quote_market]["minOrderSize"]
-                    check_base = float(base_quantity) > float(
-                        base_min_order_size)
-                    check_quote = float(quote_quantity) > float(
-                        quote_min_order_size)
+                    base_min_order_size = markets["markets"][base_market][
+                        "minOrderSize"
+                    ]
+                    quote_min_order_size = markets["markets"][quote_market][
+                        "minOrderSize"
+                    ]
+                    check_base = float(base_quantity) > float(base_min_order_size)
+                    check_quote = float(quote_quantity) > float(quote_min_order_size)
 
                     # If checks pass, place trades
                     if check_base and check_quote:
-
                         # Guard: Ensure collateral
                         if free_collateral < min_collateral:
                             break
@@ -137,7 +143,7 @@ def open_positions(client):
                             spread=spread[-1],
                             z_score=z_score,
                             half_life=half_life,
-                            hedge_ratio=hedge_ratio
+                            hedge_ratio=hedge_ratio,
                         )
 
                         # Open Trades
@@ -150,10 +156,9 @@ def open_positions(client):
 
                         # Handle success in opening trades
                         if bot_open_dict["pair_status"] == "LIVE":
-
                             # Append to list of bot agents
                             bot_agents.append(bot_open_dict)
-                            del (bot_open_dict)
+                            del bot_open_dict
 
                             # Confirm live status in print
                             print("Trade status: Live")
