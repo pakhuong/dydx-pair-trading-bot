@@ -8,7 +8,7 @@ from constants import MAX_HALF_LIFE, WINDOW, ZSCORE_THRESH
 # https://www.pythonforfinance.net/2016/05/09/python-backtesting-mean-reversion-part-2/
 
 # Turn off SettingWithCopyWarning
-pd.set_option('mode.chained_assignment', None)
+pd.set_option("mode.chained_assignment", None)
 
 
 def calculate_half_life(spread):
@@ -89,71 +89,76 @@ def backtest(spread, z_score):
     exitZscore = 0
 
     # Set up num units long
-    df_backtest["long_entry"] = (
-        (df_backtest["z_score"] < -entryZscore) & (df_backtest["z_score"].shift(1) > -entryZscore))
-    df_backtest["long_exit"] = ((df_backtest["z_score"] > exitZscore) & (
-        df_backtest["z_score"].shift(1) < exitZscore))
+    df_backtest["long_entry"] = (df_backtest["z_score"] < -entryZscore) & (
+        df_backtest["z_score"].shift(1) > -entryZscore
+    )
+    df_backtest["long_exit"] = (df_backtest["z_score"] > exitZscore) & (
+        df_backtest["z_score"].shift(1) < exitZscore
+    )
     df_backtest["num_units_long"] = np.nan
     df_backtest.loc[df_backtest["long_entry"], "num_units_long"] = 1
     df_backtest.loc[df_backtest["long_exit"], "num_units_long"] = 0
     df_backtest["num_units_long"][0] = 0
-    df_backtest["num_units_long"] = df_backtest["num_units_long"].fillna(
-        method="pad")
+    df_backtest["num_units_long"] = df_backtest["num_units_long"].fillna(method="pad")
 
     # Set up num units short
-    df_backtest["short_entry"] = ((df_backtest["z_score"] > entryZscore) & (
-        df_backtest["z_score"].shift(1) < entryZscore))
-    df_backtest["short_exit"] = (
-        (df_backtest["z_score"] < -exitZscore) & (df_backtest["z_score"].shift(1) > -exitZscore))
+    df_backtest["short_entry"] = (df_backtest["z_score"] > entryZscore) & (
+        df_backtest["z_score"].shift(1) < entryZscore
+    )
+    df_backtest["short_exit"] = (df_backtest["z_score"] < -exitZscore) & (
+        df_backtest["z_score"].shift(1) > -exitZscore
+    )
     df_backtest.loc[df_backtest["short_entry"], "num_units_short"] = -1
     df_backtest.loc[df_backtest["short_exit"], "num_units_short"] = 0
     df_backtest["num_units_short"][0] = 0
-    df_backtest["num_units_short"] = df_backtest["num_units_short"].fillna(
-        method="pad")
+    df_backtest["num_units_short"] = df_backtest["num_units_short"].fillna(method="pad")
 
-    df_backtest["num_units"] = df_backtest["num_units_long"] + \
-        df_backtest["num_units_short"]
+    df_backtest["num_units"] = (
+        df_backtest["num_units_long"] + df_backtest["num_units_short"]
+    )
     df_backtest["spread_pct_ch"] = (
-        df_backtest["spread"] - df_backtest["spread"].shift(1)) / abs(df_backtest["spread"].shift(1))
-    df_backtest["port_rets"] = df_backtest["spread_pct_ch"] * \
-        df_backtest["num_units"].shift(1)
+        df_backtest["spread"] - df_backtest["spread"].shift(1)
+    ) / abs(df_backtest["spread"].shift(1))
+    df_backtest["port_rets"] = df_backtest["spread_pct_ch"] * df_backtest[
+        "num_units"
+    ].shift(1)
 
     df_backtest["cum_rets"] = df_backtest["port_rets"].cumsum()
     df_backtest["cum_rets"] = df_backtest["cum_rets"] + 1
 
     # Calculate Sharpe Ratio
-    sharpe = ((df_backtest["port_rets"].mean() /
-              df_backtest["port_rets"].std()) * np.sqrt(2190))
+    sharpe = (
+        df_backtest["port_rets"].mean() / df_backtest["port_rets"].std()
+    ) * np.sqrt(365 * 6)
 
     return sharpe
 
 
 # Store Cointegration Results
 def store_cointegration_results(df_market_prices):
-
     # Initialize
     markets = df_market_prices.columns.to_list()
     criteria_met_pairs = []
 
     # Find cointegrated pairs
     # Start with our base pair
-    for index, base_market in enumerate(markets[:-1]):
+    for index_base, base_market in enumerate(markets[:-1]):
         series_1 = df_market_prices[base_market].values.astype(float).tolist()
 
         # Get Quote Pair
-        for quote_market in markets[index + 1:]:
-            series_2 = df_market_prices[quote_market].values.astype(
-                float).tolist()
+        for index_quote, quote_market in enumerate(markets[:-1]):
+            if index_quote == index_base:
+                continue
+
+            series_2 = df_market_prices[quote_market].values.astype(float).tolist()
 
             # Check criteria
-            coint_flag = calculate_cointegration(
-                series_1, series_2)
+            coint_flag = calculate_cointegration(series_1, series_2)
 
             if coint_flag != 1:
                 continue
 
-            hedge_ratio, spread = calculate_hedge_ratio_and_spread(
-                series_1, series_2)
+            hedge_ratio, spread = calculate_hedge_ratio_and_spread(series_1, series_2)
             half_life = calculate_half_life(spread)
             stationary_flag = test_for_stationarity(spread)
 
@@ -165,19 +170,20 @@ def store_cointegration_results(df_market_prices):
 
             # Log pair
             if sharpe >= 1.0:
-                criteria_met_pairs.append({
-                    "base_market": base_market,
-                    "quote_market": quote_market,
-                    "hedge_ratio": hedge_ratio,
-                    "half_life": half_life,
-                    "z_score": z_score.values.astype(float).tolist()[-1],
-                    "sharpe_ratio": sharpe,
-                })
+                criteria_met_pairs.append(
+                    {
+                        "base_market": base_market,
+                        "quote_market": quote_market,
+                        "hedge_ratio": hedge_ratio,
+                        "half_life": half_life,
+                        "z_score": z_score.values.astype(float).tolist()[-1],
+                        "sharpe_ratio": sharpe,
+                    }
+                )
 
     # Create and save DataFrame
     df_criteria_met = pd.DataFrame(criteria_met_pairs)
-    df_criteria_met.sort_values(
-        by="sharpe_ratio", ascending=False, inplace=True)
+    df_criteria_met.sort_values(by="sharpe_ratio", ascending=False, inplace=True)
     df_criteria_met.to_csv("cointegrated_pairs.csv")
     del df_criteria_met
 
