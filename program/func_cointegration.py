@@ -169,7 +169,7 @@ def store_cointegration_results(df_market_prices):
             sharpe = backtest(spread, z_score)
 
             # Log pair
-            if sharpe >= 1.0:
+            if sharpe >= 2.0:
                 criteria_met_pairs.append(
                     {
                         "base_market": base_market,
