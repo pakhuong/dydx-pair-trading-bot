@@ -142,14 +142,11 @@ def store_cointegration_results(df_market_prices):
 
     # Find cointegrated pairs
     # Start with our base pair
-    for index_base, base_market in enumerate(markets[:-1]):
+    for index, base_market in enumerate(markets[:-1]):
         series_1 = df_market_prices[base_market].values.astype(float).tolist()
 
         # Get Quote Pair
-        for index_quote, quote_market in enumerate(markets[:-1]):
-            if index_quote == index_base:
-                continue
-
+        for quote_market in markets[index + 1 :]:
             series_2 = df_market_prices[quote_market].values.astype(float).tolist()
 
             # Check criteria
