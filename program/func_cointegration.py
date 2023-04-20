@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 from statsmodels.tsa.stattools import adfuller, coint
-from constants import MAX_HALF_LIFE, WINDOW, ZSCORE_THRESH
+from constants import MAX_HALF_LIFE, ZSCORE_THRESH
 
 # Calculate Half Life
 # https://www.pythonforfinance.net/2016/05/09/python-backtesting-mean-reversion-part-2/
@@ -43,10 +43,10 @@ def test_for_stationarity(spread):
 
 
 # Calculate ZScore
-def calculate_zscore(spread):
+def calculate_zscore(spread, window):
     spread_series = pd.Series(spread)
-    mean = spread_series.rolling(center=False, window=WINDOW).mean()
-    std = spread_series.rolling(center=False, window=WINDOW).std()
+    mean = spread_series.rolling(center=False, window=window).mean()
+    std = spread_series.rolling(center=False, window=window).std()
     x = spread_series.rolling(center=False, window=1).mean()
     zscore = (x - mean) / std
 
@@ -162,7 +162,7 @@ def store_cointegration_results(df_market_prices):
             if half_life < 0 or half_life > MAX_HALF_LIFE or not stationary_flag:
                 continue
 
-            z_score = calculate_zscore(spread)
+            z_score = calculate_zscore(spread, int(half_life))
             sharpe = backtest(spread, z_score)
 
             # Log pair

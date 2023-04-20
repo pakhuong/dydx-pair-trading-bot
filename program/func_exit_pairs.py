@@ -127,9 +127,13 @@ def manage_trade_exits(client):
             # Initialize z_scores
             hedge_ratio = position["hedge_ratio"]
             z_score_traded = position["z_score"]
+            half_life = position["half_life"]
+
             if len(series_1) > 0 and len(series_1) == len(series_2):
                 spread = series_1 - (hedge_ratio * series_2)
-                z_score_current = calculate_zscore(spread).values.tolist()[-1]
+                z_score_current = calculate_zscore(
+                    spread, int(half_life)
+                ).values.tolist()[-1]
                 position["spread_current"] = spread[-1]
                 position["z_score_current"] = z_score_current
 
