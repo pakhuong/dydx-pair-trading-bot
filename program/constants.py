@@ -19,9 +19,6 @@ PLACE_TRADES = True
 # Resolution
 RESOLUTION = "4HOURS"
 
-# Stats Window
-WINDOW = 21
-
 # Thresholds - Opening
 MAX_HALF_LIFE = 24
 ZSCORE_THRESH = 2
