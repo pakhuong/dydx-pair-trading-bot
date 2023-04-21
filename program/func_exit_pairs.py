@@ -1,10 +1,9 @@
-from constants import CLOSE_AT_ZSCORE_CROSS, CLOSE_IF_NO_LONGER_COINTEGRATED
+from constants import CLOSE_AT_ZSCORE_CROSS
 from func_utils import format_number
 from func_public import get_candles_recent
 from func_cointegration import calculate_zscore
 from func_private import place_market_order
 import json
-import pandas as pd
 import time
 
 from func_messaging import send_message
@@ -152,25 +151,6 @@ def manage_trade_exits(client):
         # Add any other close logic you want here
         # Trigger is_close
         ###
-
-        # Close position if position_market_m1 and position_market_m2 are no longer cointegrated
-        if not is_close and CLOSE_IF_NO_LONGER_COINTEGRATED:
-            df_cointegrated_pairs = pd.read_csv("cointegrated_pairs.csv")
-            is_still_cointegrated = False
-
-            for _, row in df_cointegrated_pairs.iterrows():
-                base_market = row["base_market"]
-                quote_market = row["quote_market"]
-
-                if (
-                    base_market == position_market_m1
-                    and quote_market == position_market_m2
-                ):
-                    is_still_cointegrated = True
-                    break
-
-            if not is_still_cointegrated:
-                is_close = True
 
         # Close positions if triggered
         if is_close:
