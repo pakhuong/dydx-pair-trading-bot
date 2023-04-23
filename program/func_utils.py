@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 # Format number
 def format_number(curr_num, match_num):
     """
-      Give current number an example of number with decimals desired
-      Function will return the correctly formatted string
+    Give current number an example of number with decimals desired
+    Function will return the correctly formatted string
     """
 
     curr_num_string = f"{curr_num}"
@@ -39,13 +39,12 @@ def format_time(timestamp):
 
 # Get ISO Times
 def get_ISO_times():
-
     # Get timestamps
     date_start_0 = datetime.utcnow()
-    date_start_1 = date_start_0 - timedelta(hours=400)
-    date_start_2 = date_start_1 - timedelta(hours=400)
-    date_start_3 = date_start_2 - timedelta(hours=400)
-    date_start_4 = date_start_3 - timedelta(hours=400)
+    date_start_1 = date_start_0 - timedelta(hours=100)
+    date_start_2 = date_start_1 - timedelta(hours=100)
+    date_start_3 = date_start_2 - timedelta(hours=100)
+    date_start_4 = date_start_3 - timedelta(hours=100)
 
     # Format datetimes
     times_dict = {
