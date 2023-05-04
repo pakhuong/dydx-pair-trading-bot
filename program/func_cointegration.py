@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 from statsmodels.tsa.stattools import adfuller, coint
-from constants import MAX_HALF_LIFE, ZSCORE_THRESH
+from constants import ZSCORE_THRESH
 
 # Calculate Half Life
 # https://www.pythonforfinance.net/2016/05/09/python-backtesting-mean-reversion-part-2/
@@ -129,7 +129,7 @@ def backtest(spread, z_score):
     # Calculate Sharpe Ratio
     sharpe = (
         df_backtest["port_rets"].mean() / df_backtest["port_rets"].std()
-    ) * np.sqrt(365 * 6)
+    ) * np.sqrt(365 * 24)
 
     return sharpe
 
@@ -159,7 +159,7 @@ def store_cointegration_results(df_market_prices):
             half_life = calculate_half_life(spread)
             stationary_flag = test_for_stationarity(spread)
 
-            if half_life < 0 or half_life > MAX_HALF_LIFE or not stationary_flag:
+            if half_life < 0 or not stationary_flag:
                 continue
 
             z_score = calculate_zscore(spread, int(half_life))

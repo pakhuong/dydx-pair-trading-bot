@@ -17,10 +17,9 @@ MANAGE_EXITS = True
 PLACE_TRADES = True
 
 # Resolution
-RESOLUTION = "4HOURS"
+RESOLUTION = "1HOUR"
 
 # Thresholds - Opening
-MAX_HALF_LIFE = 18
 ZSCORE_THRESH = 2
 LEVERAGE = config("LEVERAGE", cast=int)
 
