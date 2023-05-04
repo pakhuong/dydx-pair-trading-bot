@@ -25,6 +25,7 @@ LEVERAGE = config("LEVERAGE", cast=int)
 
 # Thresholds - Closing
 CLOSE_AT_ZSCORE_CROSS = True
+CLOSE_IF_NO_LONGER_COINTEGRATED = True
 
 # Ethereum Address
 ETHEREUM_ADDRESS = "0xa9CAf26F778c2E6c7F62eCceb423157531DB3Ce3"
