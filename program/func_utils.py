@@ -40,31 +40,23 @@ def format_time(timestamp):
 # Get ISO Times
 def get_ISO_times():
     # Get timestamps
-    date_start_0 = datetime.utcnow()
-    date_start_1 = date_start_0 - timedelta(hours=400)
-    date_start_2 = date_start_1 - timedelta(hours=400)
-    date_start_3 = date_start_2 - timedelta(hours=400)
-    date_start_4 = date_start_3 - timedelta(hours=400)
+    # Get timestamps
+    date_starts = []
+
+    for i in range(11):
+        if i == 0:
+            date_starts.append(datetime.utcnow())
+        else:
+            date_starts.append(date_starts[i - 1] - timedelta(hours=100))
 
     # Format datetimes
-    times_dict = {
-        "range_1": {
-            "from_iso": format_time(date_start_1),
-            "to_iso": format_time(date_start_0),
-        },
-        "range_2": {
-            "from_iso": format_time(date_start_2),
-            "to_iso": format_time(date_start_1),
-        },
-        "range_3": {
-            "from_iso": format_time(date_start_3),
-            "to_iso": format_time(date_start_2),
-        },
-        "range_4": {
-            "from_iso": format_time(date_start_4),
-            "to_iso": format_time(date_start_3),
-        },
-    }
+    times_dict = {}
+
+    for i in range(len(date_starts) - 1):
+        times_dict[f"range_{i + 1}"] = {
+            "from_iso": format_time(date_starts[i + 1]),
+            "to_iso": format_time(date_starts[i]),
+        }
 
     # Return result
     return times_dict

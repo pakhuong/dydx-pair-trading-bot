@@ -4,15 +4,12 @@ import pandas as pd
 import numpy as np
 import time
 
-from pprint import pprint
-
 # Get relevant time periods for ISO from and to
 ISO_TIMES = get_ISO_times()
 
 
 # Get Candles recent
 def get_candles_recent(client, market):
-
     # Define output
     close_prices = []
 
@@ -20,11 +17,7 @@ def get_candles_recent(client, market):
     time.sleep(0.2)
 
     # Get data
-    candles = client.public.get_candles(
-        market=market,
-        resolution=RESOLUTION,
-        limit=100
-    )
+    candles = client.public.get_candles(market=market, resolution=RESOLUTION, limit=100)
 
     # Structure data
     for candle in candles.data["candles"]:
@@ -39,13 +32,11 @@ def get_candles_recent(client, market):
 
 # Get Candles Historical
 def get_candles_historical(client, market):
-
     # Define output
     close_prices = []
 
     # Extract historical price data for each timeframe
     for timeframe in ISO_TIMES.keys():
-
         # Confirm times needed
         tf_obj = ISO_TIMES[timeframe]
         from_iso = tf_obj["from_iso"]
@@ -60,13 +51,14 @@ def get_candles_historical(client, market):
             resolution=RESOLUTION,
             from_iso=from_iso,
             to_iso=to_iso,
-            limit=100
+            limit=100,
         )
 
         # Structure data
         for candle in candles.data["candles"]:
             close_prices.append(
-                {"datetime": candle["startedAt"], market: candle["close"]})
+                {"datetime": candle["startedAt"], market: candle["close"]}
+            )
 
     # Construct and return DataFrame
     close_prices.reverse()
@@ -76,7 +68,6 @@ def get_candles_historical(client, market):
 
 # Construct market prices
 def construct_market_prices(client):
-
     # Declare variables
     tradeable_markets = []
     markets = client.public.get_markets()
