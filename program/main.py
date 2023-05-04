@@ -6,11 +6,11 @@ from func_cointegration import store_cointegration_results
 from func_entry_pairs import open_positions
 from func_exit_pairs import manage_trade_exits
 from func_messaging import send_message
+import time
 
 
 # MAIN FUNCTION
 if __name__ == "__main__":
-
     # Connect to client
     try:
         print("Connecting to Client...")
@@ -32,7 +32,6 @@ if __name__ == "__main__":
 
     # Find Cointegrated Pairs
     if FIND_COINTEGRATED:
-
         # Construct Market Prices
         try:
             print("Fetching market prices, please allow 3 mins...")
@@ -54,22 +53,25 @@ if __name__ == "__main__":
             send_message(f"Error saving cointegrated pairs {e}")
             exit(1)
 
-    # Place trades for opening positions
-    if MANAGE_EXITS:
-        try:
-            print("Managing exits...")
-            manage_trade_exits(client)
-        except Exception as e:
-            print("Error managing exiting positions: ", e)
-            send_message(f"Error managing exiting positions {e}")
-            exit(1)
+    while True:
+        # Place trades for opening positions
+        if MANAGE_EXITS:
+            try:
+                print("Managing exits...")
+                manage_trade_exits(client)
+            except Exception as e:
+                print("Error managing exiting positions: ", e)
+                send_message(f"Error managing exiting positions {e}")
+                exit(1)
 
-    # Place trades for opening positions
-    if PLACE_TRADES:
-        try:
-            print("Finding trading opportunities...")
-            open_positions(client)
-        except Exception as e:
-            print("Error trading pairs: ", e)
-            send_message(f"Error opening trades {e}")
-            exit(1)
+        # Place trades for opening positions
+        if PLACE_TRADES:
+            try:
+                print("Finding trading opportunities...")
+                open_positions(client)
+            except Exception as e:
+                print("Error trading pairs: ", e)
+                send_message(f"Error opening trades {e}")
+                exit(1)
+
+        time.sleep(60)
