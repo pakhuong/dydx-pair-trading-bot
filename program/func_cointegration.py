@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
+from statsmodels.regression.rolling import RollingOLS
 from statsmodels.tsa.stattools import adfuller, coint
 from constants import ZSCORE_THRESH
 
@@ -54,7 +55,7 @@ def calculate_zscore(spread, window):
 
 
 # Calculate Cointegration
-def calculate_cointegration(series_1, series_2):
+def calculate_cointegration(coint_pair_df):
     series_1 = np.array(series_1).astype(np.float)
     series_2 = np.array(series_2).astype(np.float)
 
@@ -155,32 +156,50 @@ def store_cointegration_results(df_market_prices):
             if coint_flag != 1:
                 continue
 
-            hedge_ratio, spread = calculate_hedge_ratio_and_spread(series_1, series_2)
-            half_life = calculate_half_life(spread)
-            stationary_flag = test_for_stationarity(spread)
+            coint_pair_df = df_market_prices.loc[:, [base_market, quote_market]]
+
+            # Calculate hedge ratio and spread
+            coint_pair_df = df_market_prices.loc[:, [base_market, quote_market]]
+
+            coint_pair_df["hedge_ratio"] = (
+                RollingOLS(
+                    coint_pair_df[base_market].astype(float),
+                    coint_pair_df[quote_market].astype(float),
+                    window=168,
+                )
+                .fit()
+                .params.values
+            )
+
+            coint_pair_df["spread"] = (
+                coint_pair_df[base_market].astype(float)
+                - coint_pair_df[quote_market].astype(float)
+                * coint_pair_df["hedge_ratio"]
+            )
+
+            # Stationary test
+            coint_pair_df = coint_pair_df.dropna()
+            stationary_flag = test_for_stationarity(coint_pair_df["spread"])
+
+            # Calculate halflife
+            half_life = calculate_half_life(coint_pair_df["spread"])
 
             if half_life < 0 or not stationary_flag:
                 continue
 
-            z_score = calculate_zscore(spread, int(half_life))
-            sharpe = backtest(spread, z_score)
-
             # Log pair
-            if sharpe >= 2.0:
-                criteria_met_pairs.append(
-                    {
-                        "base_market": base_market,
-                        "quote_market": quote_market,
-                        "hedge_ratio": hedge_ratio,
-                        "half_life": half_life,
-                        "z_score": z_score.values.astype(float).tolist()[-1],
-                        "sharpe_ratio": sharpe,
-                    }
-                )
+
+            criteria_met_pairs.append(
+                {
+                    "base_market": base_market,
+                    "quote_market": quote_market,
+                    "half_life": half_life,
+                }
+            )
 
     # Create and save DataFrame
     df_criteria_met = pd.DataFrame(criteria_met_pairs)
-    df_criteria_met.sort_values(by="sharpe_ratio", ascending=False, inplace=True)
+    df_criteria_met.sort_values(by="half_life", ascending=False, inplace=True)
     df_criteria_met.to_csv("cointegrated_pairs.csv")
     del df_criteria_met
 
