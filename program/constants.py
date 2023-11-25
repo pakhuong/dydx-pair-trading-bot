@@ -2,33 +2,32 @@ from dydx3.constants import API_HOST_GOERLI, API_HOST_MAINNET
 from decouple import config
 
 # !!!! SELECT MODE !!!!
-MODE = "PRODUCTION"
+MODE = config("MODE")
 
 # Close all open positions and orders
-ABORT_ALL_POSITIONS = False
+ABORT_ALL_POSITIONS = config("ABORT_ALL_POSITIONS", cast=bool)
 
 # Find Cointegrated Pairs
-FIND_COINTEGRATED = True
+FIND_COINTEGRATED = config("FIND_COINTEGRATED", cast=bool)
 
 # Manage Exits
-MANAGE_EXITS = True
+MANAGE_EXITS = config("MANAGE_EXITS", cast=bool)
 
 # Place Trades
-PLACE_TRADES = True
+PLACE_TRADES = config("PLACE_TRADES", cast=bool)
 
 # Resolution
-RESOLUTION = "1HOUR"
+RESOLUTION = config("RESOLUTION", cast=int)
 
 # Thresholds - Opening
-ZSCORE_THRESH = 2
+ZSCORE_THRESH = config("ZSCORE_THRESH", cast=float)
 LEVERAGE = config("LEVERAGE", cast=int)
 
 # Thresholds - Closing
-CLOSE_AT_ZSCORE_CROSS = True
-CLOSE_IF_NO_LONGER_COINTEGRATED = True
+CLOSE_AT_ZSCORE_CROSS = config("CLOSE_AT_ZSCORE_CROSS", cast=bool)
 
 # Ethereum Address
-ETHEREUM_ADDRESS = "0xa9CAf26F778c2E6c7F62eCceb423157531DB3Ce3"
+ETHEREUM_ADDRESS = config("ETHEREUM_ADDRESS")
 
 # KEYS - PRODUCTION
 # Must be on Mainnet in DYDX
