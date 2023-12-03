@@ -99,5 +99,7 @@ def construct_market_prices(client):
         print(nans)
         df.drop(columns=nans, inplace=True)
 
+    df.to_csv("market_prices.csv")
+
     # Return result
     return df

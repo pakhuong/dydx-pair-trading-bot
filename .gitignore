@@ -7,4 +7,4 @@ venv
 
 # Generated files
 bot_agents.json
-cointegrated_pairs.csv
+*.csv

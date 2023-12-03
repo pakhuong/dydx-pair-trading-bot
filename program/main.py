@@ -15,6 +15,7 @@ if __name__ == "__main__":
     try:
         print("Connecting to Client...")
         client = connect_dydx()
+
     except Exception as e:
         print("Error connecting to client: ", e)
         send_message(f"Failed to connect to client {e}")
@@ -25,6 +26,7 @@ if __name__ == "__main__":
         try:
             print("Closing all positions...")
             close_orders = abort_all_positions(client)
+
         except Exception as e:
             print("Error closing all positions: ", e)
             send_message(f"Error closing all positions {e}")
@@ -36,6 +38,7 @@ if __name__ == "__main__":
         try:
             print("Fetching market prices, please allow 3 mins...")
             df_market_prices = construct_market_prices(client)
+
         except Exception as e:
             print("Error constructing market prices: ", e)
             send_message(f"Error constructing market prices {e}")
@@ -45,33 +48,34 @@ if __name__ == "__main__":
         try:
             print("Storing cointegrated pairs...")
             stores_result = store_cointegration_results(df_market_prices)
+
             if stores_result != "saved":
                 print("Error saving cointegrated pairs")
                 exit(1)
+
         except Exception as e:
             print("Error saving cointegrated pairs: ", e)
             send_message(f"Error saving cointegrated pairs {e}")
             exit(1)
 
-    while True:
-        # Place trades for opening positions
-        if MANAGE_EXITS:
-            try:
-                print("Managing exits...")
-                manage_trade_exits(client)
-            except Exception as e:
-                print("Error managing exiting positions: ", e)
-                send_message(f"Error managing exiting positions {e}")
-                exit(1)
+    # Place trades for opening positions
+    if MANAGE_EXITS:
+        try:
+            print("Managing exits...")
+            manage_trade_exits(client)
 
-        # Place trades for opening positions
-        if PLACE_TRADES:
-            try:
-                print("Finding trading opportunities...")
-                open_positions(client)
-            except Exception as e:
-                print("Error trading pairs: ", e)
-                send_message(f"Error opening trades {e}")
-                exit(1)
+        except Exception as e:
+            print("Error managing exiting positions: ", e)
+            send_message(f"Error managing exiting positions {e}")
+            exit(1)
 
-        time.sleep(60)
+    # Place trades for opening positions
+    if PLACE_TRADES:
+        try:
+            print("Finding trading opportunities...")
+            open_positions(client)
+
+        except Exception as e:
+            print("Error trading pairs: ", e)
+            send_message(f"Error opening trades {e}")
+            exit(1)

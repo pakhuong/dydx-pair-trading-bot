@@ -10,7 +10,7 @@ from pprint import pprint
 class BotAgent:
 
     """
-      Primary function of BotAgent handles opening and checking order status
+    Primary function of BotAgent handles opening and checking order status
     """
 
     # Initialize class
@@ -31,7 +31,6 @@ class BotAgent:
         half_life,
         hedge_ratio,
     ):
-
         # Initialize class variables
         self.client = client
         self.market_1 = market_1
@@ -71,7 +70,6 @@ class BotAgent:
 
     # Check order status by id
     def check_order_status_by_id(self, order_id):
-
         # Allow time to process
         time.sleep(2)
 
@@ -107,12 +105,12 @@ class BotAgent:
 
     # Open trades
     def open_trades(self):
-
         # Print status
         print("---")
         print(f"{self.market_1}: Placing first order...")
         print(
-            f"Side: {self.base_side}, Size: {self.base_size}, Price: {self.base_price}")
+            f"Side: {self.base_side}, Size: {self.base_size}, Price: {self.base_price}"
+        )
         print("---")
 
         # Place Base Order
@@ -123,7 +121,7 @@ class BotAgent:
                 side=self.base_side,
                 size=self.base_size,
                 price=self.base_price,
-                reduce_only=False
+                reduce_only=False,
             )
 
             # Store the order id
@@ -135,8 +133,7 @@ class BotAgent:
             return self.order_dict
 
         # Ensure order is live before processing
-        order_status_m1 = self.check_order_status_by_id(
-            self.order_dict["order_id_m1"])
+        order_status_m1 = self.check_order_status_by_id(self.order_dict["order_id_m1"])
 
         # Guard: Aborder if order failed
         if order_status_m1 != "live":
@@ -148,7 +145,8 @@ class BotAgent:
         print("---")
         print(f"{self.market_2}: Placing second order...")
         print(
-            f"Side: {self.quote_side}, Size: {self.quote_size}, Price: {self.quote_price}")
+            f"Side: {self.quote_side}, Size: {self.quote_size}, Price: {self.quote_price}"
+        )
         print("---")
 
         # Place Quote Order
@@ -159,7 +157,7 @@ class BotAgent:
                 side=self.quote_side,
                 size=self.quote_size,
                 price=self.quote_price,
-                reduce_only=False
+                reduce_only=False,
             )
 
             # Store the order id
@@ -171,8 +169,7 @@ class BotAgent:
             return self.order_dict
 
         # Ensure order is live before processing
-        order_status_m2 = self.check_order_status_by_id(
-            self.order_dict["order_id_m2"])
+        order_status_m2 = self.check_order_status_by_id(self.order_dict["order_id_m2"])
 
         # Guard: Aborder if order failed
         if order_status_m2 != "live":
@@ -187,24 +184,27 @@ class BotAgent:
                     side=self.quote_side,
                     size=self.base_size,
                     price=self.accept_failsafe_base_price,
-                    reduce_only=True
+                    reduce_only=True,
                 )
 
                 # Ensure order is live before proceeding
                 time.sleep(2)
+
                 order_status_close_order = check_order_status(
-                    self.client, close_order["order"]["id"])
+                    self.client, close_order["order"]["id"]
+                )
+
                 if order_status_close_order != "FILLED":
                     print("ABORT PROGRAM")
                     print("Unexpected Error")
                     print(order_status_close_order)
 
                     # Send Message
-                    send_message(
-                        "Failed to execute. Code red. Error code: 100")
+                    send_message("Failed to execute. Code red. Error code: 100")
 
                     # ABORT
                     exit(1)
+
             except Exception as e:
                 self.order_dict["pair_status"] = "ERROR"
                 self.order_dict["comments"] = f"Close Market 1 {self.market_1}: , {e}"

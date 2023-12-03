@@ -71,15 +71,27 @@ def calculate_cointegration(series_1, series_2):
 
 
 # Calculate hedge ratio and spread
-def calculate_hedge_ratio_and_spread(series_1, series_2):
-    series_1 = np.array(series_1).astype(np.float)
-    series_2 = np.array(series_2).astype(np.float)
+def calculate_hedge_ratio_and_spread(coint_pair_df):
+    df = coint_pair_df.copy()
 
-    model = sm.OLS(series_1, series_2).fit()
-    hedge_ratio = model.params[0]
-    spread = series_1 - (hedge_ratio * series_2)
+    # Calculate hedge ratio
+    df["hedge_ratio"] = (
+        RollingOLS(
+            coint_pair_df["spread"].astype(float),
+            coint_pair_df["base_market"].astype(float),
+            window=168,
+        )
+        .fit()
+        .params.values
+    )
 
-    return hedge_ratio, spread
+    # Calculate spread
+    df["spread"] = (
+        coint_pair_df["base_market"] - coint_pair_df["quote_market"] * df["hedge_ratio"]
+    )
+
+    # Return only hedge_ration and spread columns
+    return df[["hedge_ratio", "spread"]]
 
 
 # Store Cointegration Results
@@ -106,22 +118,11 @@ def store_cointegration_results(df_market_prices):
             coint_pair_df = df_market_prices.loc[:, [base_market, quote_market]]
 
             # Calculate hedge ratio and spread
+            hedge_ratio_and_spread_df = calculate_hedge_ratio_and_spread(coint_pair_df)
 
-            coint_pair_df["hedge_ratio"] = (
-                RollingOLS(
-                    coint_pair_df[base_market].astype(float),
-                    coint_pair_df[quote_market].astype(float),
-                    window=168,
-                )
-                .fit()
-                .params.values
-            )
-
-            coint_pair_df["spread"] = (
-                coint_pair_df[base_market].astype(float)
-                - coint_pair_df[quote_market].astype(float)
-                * coint_pair_df["hedge_ratio"]
-            )
+            # Calculate hedge ratio
+            coint_pair_df["hedge_ratio"] = hedge_ratio_and_spread_df["hedge_ratio"]
+            coint_pair_df["spread"] = hedge_ratio_and_spread_df["spread"]
 
             # Stationary test
             coint_pair_df = coint_pair_df.dropna()
@@ -137,7 +138,6 @@ def store_cointegration_results(df_market_prices):
                 continue
 
             # Log pair
-
             criteria_met_pairs.append(
                 {
                     "base_market": base_market,
@@ -150,6 +150,7 @@ def store_cointegration_results(df_market_prices):
     df_criteria_met = pd.DataFrame(criteria_met_pairs)
     df_criteria_met.sort_values(by="half_life", inplace=True)
     df_criteria_met.to_csv("cointegrated_pairs.csv")
+
     del df_criteria_met
 
     # Return result
