@@ -71,14 +71,14 @@ def calculate_cointegration(series_1, series_2):
 
 
 # Calculate hedge ratio and spread
-def calculate_hedge_ratio_and_spread(coint_pair_df):
+def calculate_hedge_ratio_and_spread(coint_pair_df, base_market, quote_market):
     df = coint_pair_df.copy()
 
     # Calculate hedge ratio
     df["hedge_ratio"] = (
         RollingOLS(
-            coint_pair_df["spread"].astype(float),
-            coint_pair_df["base_market"].astype(float),
+            df[base_market].astype(float),
+            df[quote_market].astype(float),
             window=168,
         )
         .fit()
@@ -87,7 +87,8 @@ def calculate_hedge_ratio_and_spread(coint_pair_df):
 
     # Calculate spread
     df["spread"] = (
-        coint_pair_df["base_market"] - coint_pair_df["quote_market"] * df["hedge_ratio"]
+        df[base_market].astype(float)
+        - df[quote_market].astype(float) * df["hedge_ratio"]
     )
 
     # Return only hedge_ration and spread columns
@@ -118,7 +119,9 @@ def store_cointegration_results(df_market_prices):
             coint_pair_df = df_market_prices.loc[:, [base_market, quote_market]]
 
             # Calculate hedge ratio and spread
-            hedge_ratio_and_spread_df = calculate_hedge_ratio_and_spread(coint_pair_df)
+            hedge_ratio_and_spread_df = calculate_hedge_ratio_and_spread(
+                coint_pair_df, base_market, quote_market
+            )
 
             # Calculate hedge ratio
             coint_pair_df["hedge_ratio"] = hedge_ratio_and_spread_df["hedge_ratio"]

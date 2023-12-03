@@ -58,7 +58,10 @@ def open_positions(client):
         pair_df = market_prices_df.loc[:, [base_market, quote_market]]
 
         # Get hedge ratio and spread
-        spread_and_zscore_df = calculate_hedge_ratio_and_spread(pair_df)
+        spread_and_zscore_df = calculate_hedge_ratio_and_spread(
+            pair_df, base_market, quote_market
+        )
+
         pair_df["hedge_ratio"] = spread_and_zscore_df["hedge_ratio"]
         pair_df["spread"] = spread_and_zscore_df["spread"]
 
