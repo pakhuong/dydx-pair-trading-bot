@@ -17,7 +17,7 @@ MANAGE_EXITS = config("MANAGE_EXITS", cast=bool)
 PLACE_TRADES = config("PLACE_TRADES", cast=bool)
 
 # Resolution
-RESOLUTION = config("RESOLUTION", cast=int)
+RESOLUTION = config("RESOLUTION")
 
 # Thresholds - Opening
 ZSCORE_THRESH = config("ZSCORE_THRESH", cast=float)
