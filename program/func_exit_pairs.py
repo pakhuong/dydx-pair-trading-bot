@@ -1,7 +1,7 @@
-from constants import CLOSE_AT_ZSCORE_CROSS
+from constants import CLOSE_AT_ZSCORE_CROSS, ZSCORE_THRESH
 from func_utils import format_number
 from func_public import get_candles_recent
-from func_cointegration import calculate_zscore
+from func_cointegration import calculate_hedge_ratio_and_spread, calculate_zscore
 from func_private import place_market_order
 import json
 import pandas as pd
@@ -117,28 +117,33 @@ def manage_trade_exits(client):
             continue
 
         # Get prices
-        series_1 = get_candles_recent(client, position_market_m1)
-        time.sleep(0.2)
-        series_2 = get_candles_recent(client, position_market_m2)
-        time.sleep(0.2)
+        market_prices_df = pd.read_csv("market_prices.csv", index_col="datetime")
+        pair_df = market_prices_df.loc[:, [position_market_m1, position_market_m2]]
+        series_1 = pair_df[position_market_m1].values.astype(float).tolist()
+        series_2 = pair_df[position_market_m2].values.astype(float).tolist()
 
         # Trigger close based on Z-Score
         if CLOSE_AT_ZSCORE_CROSS:
             # Initialize z_scores
-            hedge_ratio = position["hedge_ratio"]
             z_score_traded = position["z_score"]
-            half_life = position["half_life"]
 
             if len(series_1) > 0 and len(series_1) == len(series_2):
-                spread = series_1 - (hedge_ratio * series_2)
+                hedge_ratio_and_spread_df = calculate_hedge_ratio_and_spread(
+                    pair_df, position_market_m1, position_market_m2
+                )
+
+                pair_df["hedge_ratio"] = hedge_ratio_and_spread_df["hedge_ratio"]
+                pair_df["spread"] = hedge_ratio_and_spread_df["spread"]
+
                 z_score_current = calculate_zscore(
-                    spread, int(half_life)
+                    pair_df["spread"], 72
                 ).values.tolist()[-1]
-                position["spread_current"] = spread[-1]
+
+                position["spread_current"] = pair_df["spread"].values.tolist()[-1]
                 position["z_score_current"] = z_score_current
 
             # Determine trigger
-            z_score_level_check = abs(z_score_current) >= 0
+            z_score_level_check = abs(z_score_current) >= ZSCORE_THRESH
             z_score_cross_check = (z_score_current < 0 and z_score_traded > 0) or (
                 z_score_current > 0 and z_score_traded < 0
             )
@@ -152,25 +157,6 @@ def manage_trade_exits(client):
         # Add any other close logic you want here
         # Trigger is_close
         ###
-
-        # Close position if position_market_m1 and position_market_m2 are no longer cointegrated
-        if not is_close and CLOSE_IF_NO_LONGER_COINTEGRATED:
-            df_cointegrated_pairs = pd.read_csv("cointegrated_pairs.csv")
-            is_still_cointegrated = False
-
-            for _, row in df_cointegrated_pairs.iterrows():
-                base_market = row["base_market"]
-                quote_market = row["quote_market"]
-
-                if (
-                    base_market == position_market_m1
-                    and quote_market == position_market_m2
-                ):
-                    is_still_cointegrated = True
-                    break
-
-            if not is_still_cointegrated:
-                is_close = True
 
         # Close positions if triggered
         if is_close:
